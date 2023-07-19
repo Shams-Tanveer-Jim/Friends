@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -54,15 +56,16 @@ class ParentScreen extends StatelessWidget {
         ),
         body: Obx(() {
           if (_friendController.isLoading.value) {
-            return ListView.builder(
-                itemBuilder: (_, index) {
-                  return const FriendListShimmer();
-                },
-                itemCount: 7);
+            return GridView.builder(
+              itemCount: 10,
+              itemBuilder: (context, index) => const FriendListShimmer(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, mainAxisSpacing: 5),
+            );
           }
 
-          if (_friendController.friends.value.isEmpty) {
-            return Center(
+          if (_friendController.friends.isEmpty) {
+            return const Center(
               child: Text("No Friends Are Available"),
             );
           }
@@ -70,11 +73,13 @@ class ParentScreen extends StatelessWidget {
             onRefresh: () async {
               await _friendController.getFriends();
             },
-            child: SingleChildScrollView(
-                child: Column(
-                    children: _friendController.friends
-                        .map((element) => FriendCard(element))
-                        .toList())),
+            child: GridView.builder(
+              itemCount: _friendController.friends.length,
+              itemBuilder: (context, index) =>
+                  FriendCard(_friendController.friends[index]),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, mainAxisSpacing: 5),
+            ),
           );
         }),
       ),
@@ -98,59 +103,72 @@ class FriendCard extends StatelessWidget {
           shape: RoundedRectangleBorder(
               side: BorderSide(color: Colors.white.withOpacity(0.5)),
               borderRadius: BorderRadius.circular(15)),
-          color: Colors.black.withOpacity(0.05),
+          color: ColorConstants.gridColors[Random().nextInt(7)],
           child: Container(
             padding: const EdgeInsets.all(10),
-            child: ListTile(
-              leading: CachedNetworkImage(
-                imageBuilder: (context, imageProvider) => Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                      image: DecorationImage(image: imageProvider),
-                      borderRadius: BorderRadius.circular(30)),
-                ),
-                imageUrl: results.picture?.large ??
-                    "https://randomuser.me/api/portraits/thumb/men/83.jpg",
-                placeholder: (context, url) => const CircularProgressIndicator(
-                  color: Colors.white,
-                ),
-                errorWidget: (context, url, error) => const Icon(Icons.error),
-              ),
-              trailing: const Icon(
-                Icons.keyboard_arrow_right,
-                color: Colors.white,
-              ),
-              title: Text(
-                "${results.name?.title ?? ""} ${results.name?.first ?? ""} ${results.name?.last ?? ""} ",
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500),
-              ),
-              subtitle: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: RichText(
-                  text: TextSpan(children: [
-                    const TextSpan(
-                      text: "From",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontStyle: FontStyle.italic,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CachedNetworkImage(
+                      imageBuilder: (context, imageProvider) => Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                            image: DecorationImage(image: imageProvider),
+                            borderRadius: BorderRadius.circular(30)),
                       ),
+                      imageUrl: results.picture?.large ??
+                          "https://randomuser.me/api/portraits/thumb/men/83.jpg",
+                      placeholder: (context, url) =>
+                          const CircularProgressIndicator(
+                        color: Colors.white,
+                      ),
+                      errorWidget: (context, url, error) =>
+                          const Icon(Icons.error),
                     ),
-                    const WidgetSpan(
-                        child: SizedBox(
-                      width: 5,
-                    )),
-                    TextSpan(
-                        text: results.location?.country ?? "",
-                        style:
-                            const TextStyle(color: Colors.white, fontSize: 16))
-                  ]),
+                    const Icon(
+                      Icons.keyboard_arrow_right,
+                      color: Colors.white,
+                    ),
+                  ],
                 ),
-              ),
+                const SizedBox(
+                  height: 15,
+                ),
+                Text(
+                  "${results.name?.title ?? ""} ${results.name?.first ?? ""} ${results.name?.last ?? ""} ",
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: RichText(
+                    text: TextSpan(children: [
+                      const TextSpan(
+                        text: "From",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                      const WidgetSpan(
+                          child: SizedBox(
+                        width: 5,
+                      )),
+                      TextSpan(
+                          text: results.location?.country ?? "",
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 16))
+                    ]),
+                  ),
+                )
+              ],
             ),
           ),
         ),
@@ -170,28 +188,32 @@ class FriendListShimmer extends StatelessWidget {
         shape: RoundedRectangleBorder(
             side: BorderSide(color: Colors.white.withOpacity(0.5)),
             borderRadius: BorderRadius.circular(15)),
-        color: Colors.black.withOpacity(0.05),
+        color: Colors.black.withOpacity(0.2),
         child: Container(
           height: 100,
           padding: const EdgeInsets.all(10),
-          child: const Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              CustomShimmerCircular(height: 50, width: 50),
-              SizedBox(
-                width: 15,
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  CustomShimmerRoundedRectangle(height: 15, width: 200),
+                  CustomShimmerCircular(height: 50, width: 50),
                   SizedBox(
-                    height: 15,
-                  ),
-                  CustomShimmerRoundedRectangle(height: 15, width: 150),
+                    width: 50,
+                    height: 50,
+                  )
                 ],
-              )
+              ),
+              SizedBox(
+                height: 15,
+              ),
+              CustomShimmerRoundedRectangle(height: 15, width: 200),
+              SizedBox(
+                height: 15,
+              ),
+              CustomShimmerRoundedRectangle(height: 15, width: 150)
             ],
           ),
         ),
